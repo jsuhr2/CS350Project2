@@ -17,9 +17,23 @@ Node parse(int argc, const char **argv){
 					return inputs;
 					break;
 				case 'N':
+					for(int i = 0; optarg[i] != '\0'; i++){
+						if(isdigit(optarg[i]) == 0){
+							fprintf(stderr, "Incorrect argument for number of levels\n");
+							inputs.exitFlag = 1;
+							break;
+						}
+					}
 					inputs.numLevels = atoi(optarg);
 					break;
 				case 'M':
+					for(int i = 0; optarg[i] != '\0'; i++){
+						if(isdigit(optarg[i]) == 0){
+							fprintf(stderr, "Incorrect argument for number of children\n");
+							inputs.exitFlag = 1;
+							break;
+						}
+					}
 					inputs.numChildren = atoi(optarg);
 					break;
 				case 'p':
