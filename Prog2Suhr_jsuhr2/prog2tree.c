@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <string.h>
 
 void tree(int currLevel, int numChildren){
 	if(currLevel == 0)
@@ -52,8 +54,13 @@ int main(int argc, char const **argv){
 	if((sleepTime == -1) && (inputs.pauseFlag == 0))
 		sleepTime = 1;
 	
-	if(numLevels == 0)
-		pause();
+	if(numLevels == 1){
+		printf("ALIVE: Level %d process with pid=%d, child of ppid=%d\n", numLevels, getpid(), getppid());
+		if(inputs.pauseFlag == 1)
+			pause();
+		else if(inputs.sleepFlag == 1)
+			sleep(sleepTime);
+	}
 	printf("ALIVE: Level %d process with pid=%d, child of ppid=%d\n", numLevels, getpid(), getppid());
 	for(int i = 0; i < numChildren; i++){
 		pid_t childPid = fork();
@@ -62,26 +69,36 @@ int main(int argc, char const **argv){
 			exit(1);
 		}
 		if(childPid == 0){
-			execlp("/bin/sh", "./prog2tree", "-N", (numLevels - 1), "-M", numChildren, (char *)NULL);
+			if(numLevels > 1){
+				char *arguments[7];
+				char *command = "./prog2tree";
+				if(inputs.pauseFlag == 1){
+					arguments[0] = "-N";
+					sprintf(arguments[1], "%d", numLevels - 1);
+					arguments[2] = "-M";
+					sprintf(arguments[3], "%d", numChildren);
+					arguments[4] = "-p";
+					arguments[5] = NULL;
+					arguments[6] = NULL;
+				} else{
+					arguments[0] = "-N";
+					sprintf(arguments[1], "%d", numLevels - 1);
+					arguments[2] = "-M";
+					sprintf(arguments[3], "%d", numChildren);
+					arguments[4] = "-s";
+					sprintf(arguments[5], "%d", sleepTime);
+					arguments[6] = NULL;
+				}
+				if(execvp(command, arguments) < 0){
+					fprintf(stderr, "ERROR: execvp failed\n");
+					exit(1);			
+				}
+			}
 		}
 		else{
 			wait(NULL);
+			printf("EXITING: Level %d process with pid=%d, child of ppid=%d\n", numLevels, getpid(), getppid());
 		}
 	}
-
-/*	
-	pid = fork();
-	if(pid < 0){
-		fprintf(stderr, "Fork failed.\n");
-		return 1;
-	}
-	
-	if(pid == 0){
-		execlp("/bin/ls", "ls", NULL);
-	} else{
-		wait(NULL);
-		printf("Child Complete.\n");
-	}
-*/
 	return 0;
 }
